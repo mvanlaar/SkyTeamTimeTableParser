@@ -253,21 +253,26 @@ namespace SkyTeamTimeTableParser
                                     // ^([A-Z]{2}|[A-Z]\d|\d[A-Z])[0-9](\d{1,4})?(\*)?$ - IB0511*
                                     // Nieuw rekening houdend met IB0511
                                     //Regex rgx = new Regex(@"^([A-Z]{2}|[A-Z]\d|\d[A-Z])[0-9](\d{1,4})?(\*)?$");
-                                    if (rgxFlightNumber.IsMatch(temp_string) && !_SkyTeamAircraftCode.Contains(temp_string, StringComparer.OrdinalIgnoreCase))
+                                    if (rgxFlightNumber.IsMatch(temp_string))
                                     {
-                                        TEMP_FlightNumber = temp_string;
-                                        if (temp_string.Contains("*"))
-                                        {
-                                            TEMP_FlightCodeShare = true;
-                                            TEMP_FlightNumber = TEMP_FlightNumber.Replace("*", "");
-                                        }
+                                        // Extra check for SU9 flight number and Aircraft Type
+                                        if (TEMP_FlightNumber == null) { 
+                                            TEMP_FlightNumber = temp_string;
+                                            if (temp_string.Contains("*"))
+                                            {
+                                                TEMP_FlightCodeShare = true;
+                                                TEMP_FlightNumber = TEMP_FlightNumber.Replace("*", "");
+                                            }
+                                        } 
                                     }
                                     // Vliegtuig parsing
                                     if (temp_string.Length == 3)
                                     {
                                         if (_SkyTeamAircraftCode.Contains(temp_string, StringComparer.OrdinalIgnoreCase))
                                         {
-                                            TEMP_Aircraftcode = temp_string;
+                                            if (TEMP_Aircraftcode == null) { 
+                                                TEMP_Aircraftcode = temp_string;
+                                            }
                                         }
                                     }
                                     if (TEMP_Aircraftcode != null && rgxFlightTime.Matches(temp_string).Count > 0)
@@ -283,6 +288,10 @@ namespace SkyTeamTimeTableParser
                                         TEMP_DurationTime = date;
                                         //int rgxFlightTimeH = rgxFlightTime.Match(temp_string).Groups[0].Value
                                         //TEMP_DurationTime = DateTime.ParseExact(temp_string, "HH\H mm \M", null);
+                                        string TEMP_Airline = null;
+                                        if (TEMP_Aircraftcode == "BUS") { TEMP_Airline = null;}
+                                        else { TEMP_Airline = TEMP_FlightNumber.Substring(0,2);}
+
                                         CIFLights.Add(new CIFLight
                                         {
                                             FromIATA = TEMP_FromIATA,
@@ -292,7 +301,7 @@ namespace SkyTeamTimeTableParser
                                             ArrivalTime = TEMP_ArrivalTime,
                                             DepartTime = TEMP_DepartTime,
                                             FlightAircraft = TEMP_Aircraftcode,
-                                            FlightAirline = TEMP_FlightNumber.Substring(0, 2),
+                                            FlightAirline = TEMP_Airline,
                                             FlightMonday = TEMP_FlightMonday,
                                             FlightTuesday = TEMP_FlightTuesday,
                                             FlightWednesday = TEMP_FlightWednesday,
