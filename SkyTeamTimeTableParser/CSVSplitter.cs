@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace AirlineTimeTableParser
+namespace SkyTeamTimeTableParser
 {
     // mangled code horribly to fit without scrolling
     public static class CsvSplitter
