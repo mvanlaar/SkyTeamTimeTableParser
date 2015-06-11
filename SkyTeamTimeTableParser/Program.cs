@@ -99,7 +99,7 @@ namespace SkyTeamTimeTableParser
                 
                 
                 // Loop through each page of the document
-                for (var page = 87; page <= 87; page++)
+                for (var page = 5; page <= pdfReader.NumberOfPages; page++)
                 //for (var page = 3; page <= pdfReader.NumberOfPages; page++)
                 {
 
@@ -353,7 +353,7 @@ namespace SkyTeamTimeTableParser
                                         TEMP_FlightCodeShare = false;
                                         TEMP_FlightNextDayArrival = false;
                                     }
-                                    Console.WriteLine(value);
+                                    //Console.WriteLine(value);
                                 }
                             }
                         }
