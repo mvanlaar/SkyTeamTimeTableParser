@@ -226,20 +226,25 @@ namespace SkyTeamTimeTableParser
                                             y = y.Replace(" ", "");
                                         }
                                         else { y = temp_string; }
+                                        y = y.Trim();
 
-                                        char[] arr;
-                                        arr = y.ToCharArray();
+                                        if (!_SkyTeamAircraftCode.Contains(y, StringComparer.OrdinalIgnoreCase)) { 
+                                            // Check to see it is not the airplane type.
+                                            char[] arr;
+                                            arr = y.ToCharArray();
 
-                                        foreach (char c in arr)
-                                        {
-                                            int.TryParse(c.ToString(), out TEMP_Conversie);
-                                            if (TEMP_Conversie == 1) { TEMP_FlightMonday = true; }
-                                            if (TEMP_Conversie == 2) { TEMP_FlightTuesday = true; }
-                                            if (TEMP_Conversie == 3) { TEMP_FlightWednesday = true; }
-                                            if (TEMP_Conversie == 4) { TEMP_FlightThursday = true; }
-                                            if (TEMP_Conversie == 5) { TEMP_FlightFriday = true; }
-                                            if (TEMP_Conversie == 6) { TEMP_FlightSaterday = true; }
-                                            if (TEMP_Conversie == 7) { TEMP_FlightSunday = true; }
+                                            foreach (char c in arr)
+                                            {
+                                                int.TryParse(c.ToString(), out TEMP_Conversie);
+                                                if (TEMP_Conversie == 1) { TEMP_FlightSunday = true; }
+                                                if (TEMP_Conversie == 2) { TEMP_FlightMonday = true; }
+                                                if (TEMP_Conversie == 3) { TEMP_FlightTuesday = true; }
+                                                if (TEMP_Conversie == 4) { TEMP_FlightWednesday = true; }
+                                                if (TEMP_Conversie == 5) { TEMP_FlightThursday = true; }
+                                                if (TEMP_Conversie == 6) { TEMP_FlightFriday = true; }
+                                                if (TEMP_Conversie == 7) { TEMP_FlightSaterday = true; }
+                                                
+                                            }
                                         }
 
                                     }
