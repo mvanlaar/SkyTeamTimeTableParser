@@ -38,6 +38,7 @@ namespace SkyTeamTimeTableParser
             public DateTime FlightDuration;
             public Boolean FlightCodeShare;
             public Boolean FlightNextDayArrival;
+            public int FlightNextDays;
         }
 
         public static readonly List<string> _SkyTeamAircraftCode = new List<string>() { "100","313","319","321","330","333","343","346","388","733","735","310","318","320","32S","332","340","345","380","717","734","736","737", "739", "73G", "73J", "73W", "747", "74M", "753", "75W", "763", "767", "772", "777", "77W", "788", "AB6", "AT5", "ATR", "CR2", "CR9", "CRK", "E70", "E90", "EM2", "EQV", "ER4", "F50", "M11", "M90", "SF3", "738", "73C", "73H", "73R", "744", "74E", "752", "757", "762", "764", "76W", "773", "77L", "787", "A81", "AR8", "AT7", "BUS", "CR7", "CRJ", "DH4", "E75", "E95", "EMJ", "ER3", "ERJ", "F70", "M88", "S20", "SU9" };
@@ -48,7 +49,7 @@ namespace SkyTeamTimeTableParser
             var text = new StringBuilder();
             CultureInfo ci = new CultureInfo("en-US");
             string path = AppDomain.CurrentDomain.BaseDirectory + "data\\Skyteam_Timetable.pdf";
-            Regex rgxtime = new Regex(@"^([0-1]?[0-9]|[2][0-3]):([0-5][0-9])(\+1)?$");
+            Regex rgxtime = new Regex(@"^([0-1]?[0-9]|[2][0-3]):([0-5][0-9])(\+1)?(\+2)?(\+-1)?$");
             Regex rgxFlightNumber = new Regex(@"^([A-Z]{2}|[A-Z]\d|\d[A-Z])[0-9](\d{1,4})?(\*)?$");
             Regex rgxIATAAirport = new Regex(@"^[A-Z]{3}$");
             Regex rgxdate1 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)");            
@@ -99,7 +100,7 @@ namespace SkyTeamTimeTableParser
                 
                 
                 // Loop through each page of the document
-                for (var page = 244; page <= 244; page++)
+                for (var page = 5; page <= pdfReader.NumberOfPages; page++)
                 //for (var page = 3; page <= pdfReader.NumberOfPages; page++)
                 {
 
@@ -153,6 +154,7 @@ namespace SkyTeamTimeTableParser
                         string TEMP_Aircraftcode = null;
                         DateTime TEMP_DurationTime = new DateTime();
                         Boolean TEMP_FlightNextDayArrival = false;
+                        int TEMP_FlightNextDays = 0;
                         foreach (string line in lines)
                         {
                             string[] values = line.SplitWithQualifier(',', '\"', true);
@@ -199,20 +201,7 @@ namespace SkyTeamTimeTableParser
                                                 TEMP_ValidTo = DateTime.ParseExact(rgxdate1.Matches(temp_string)[1].Value, "d MMM", ci, DateTimeStyles.None);
                                             }
                                         }
-                                    }
-
-                                    //if (String.Equals("-", temp_string) || temp_string.Substring(0, 1) == "-" || rgxdate2.Matches(temp_string).Count > 0 || )
-                                    //{
-                                    //    // This can be a valid to check on minvalue. 
-                                    //    if (TEMP_ValidTo == DateTime.MinValue)
-                                    //    {
-                                    //        if (temp_string == "-" || temp_string.Substring(0, 1) == "-") { TEMP_ValidFrom = ValidFrom; }
-                                    //        else
-                                    //        {
-                                    //            TEMP_ValidTo = DateTime.ParseExact(rgxdate2.Match(temp_string).Groups[0].Value, "d MMM", ci, DateTimeStyles.None);
-                                    //        }
-                                    //    }
-                                    //}
+                                    }                                   
                                     // Parsing flightdays
                                     if (rgxFlightDay.Matches(temp_string).Count > 0 || rgxFlightDay2.Matches(temp_string).Count > 0)                                    {
                                         // Flight days found!
@@ -266,18 +255,27 @@ namespace SkyTeamTimeTableParser
                                             {
                                                 // Next day arrival
                                                 x = x.Replace("+1", "");
+                                                TEMP_FlightNextDays = 1;
                                                 TEMP_FlightNextDayArrival = true;
                                             }
-                                            DateTime.TryParse(x.Trim(), out TEMP_ArrivalTime);
-                                            //DateTime.TryParseExact(temp_string, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out TEMP_ArrivalTime);
+                                            if (x.Contains("+2"))
+                                            {
+                                                // Next day arrival
+                                                x = x.Replace("+2", "");
+                                                TEMP_FlightNextDays = 2;
+                                                TEMP_FlightNextDayArrival = true;
+                                            }
+                                            if (x.Contains("+-1"))
+                                            {
+                                                // Next day arrival
+                                                x = x.Replace("+-1", "");
+                                                TEMP_FlightNextDays = -1;
+                                                TEMP_FlightNextDayArrival = true;
+                                            }
+                                            DateTime.TryParse(x.Trim(), out TEMP_ArrivalTime);                                            
                                         }                                         
                                     }
-                                    // Vluchtnumber parsing op basis van reg ex:
-                                    // ^(([A-Za-z]{2,3})|([A-Za-z]\d)|(\d[A-Za-z]))(\d{1,})([A-Za-z]?)$ 
-                                    // ^([A-Z]{2}|[A-Z]\d|\d[A-Z])[1-9](\d{1,3})?$ - IB0511
-                                    // ^([A-Z]{2}|[A-Z]\d|\d[A-Z])[0-9](\d{1,4})?(\*)?$ - IB0511*
-                                    // Nieuw rekening houdend met IB0511
-                                    //Regex rgx = new Regex(@"^([A-Z]{2}|[A-Z]\d|\d[A-Z])[0-9](\d{1,4})?(\*)?$");
+                                    // FlightNumber Parsing
                                     if (rgxFlightNumber.IsMatch(temp_string))
                                     {
                                         // Extra check for SU9 flight number and Aircraft Type
@@ -338,7 +336,8 @@ namespace SkyTeamTimeTableParser
                                             FlightOperator = null,
                                             FlightDuration = TEMP_DurationTime,
                                             FlightCodeShare = TEMP_FlightCodeShare,
-                                            FlightNextDayArrival = TEMP_FlightNextDayArrival
+                                            FlightNextDayArrival = TEMP_FlightNextDayArrival,
+                                            FlightNextDays = TEMP_FlightNextDays
                                         });
                                         // Cleaning All but From and To 
                                         TEMP_ValidFrom = new DateTime();
@@ -358,6 +357,7 @@ namespace SkyTeamTimeTableParser
                                         TEMP_DurationTime = new DateTime();
                                         TEMP_FlightCodeShare = false;
                                         TEMP_FlightNextDayArrival = false;
+                                        TEMP_FlightNextDays = 0;
                                     }
                                     if (temp_string.Contains("Operated by: "))
                                     {
@@ -386,6 +386,7 @@ namespace SkyTeamTimeTableParser
                                         TEMP_DurationTime = new DateTime();
                                         TEMP_FlightCodeShare = false;
                                         TEMP_FlightNextDayArrival = false;
+                                        TEMP_FlightNextDays = 0;
                                     }
                                     Console.WriteLine(value);
                                 }
