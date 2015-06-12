@@ -51,8 +51,7 @@ namespace SkyTeamTimeTableParser
             Regex rgxtime = new Regex(@"^([0-1]?[0-9]|[2][0-3]):([0-5][0-9])(\+1)?$");
             Regex rgxFlightNumber = new Regex(@"^([A-Z]{2}|[A-Z]\d|\d[A-Z])[0-9](\d{1,4})?(\*)?$");
             Regex rgxIATAAirport = new Regex(@"^[A-Z]{3}$");
-            Regex rgxdate1 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)");
-            Regex rgxdate2 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$");
+            Regex rgxdate1 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)");            
             Regex rgxFlightDay = new Regex(@"^\d+$");
             Regex rgxFlightDay2 = new Regex(@"\s[1234567](\s|$)");
             Regex rgxFlightTime = new Regex(@"^([0-9]|0[0-9]|1[0-9]|2[0-3])H([0-9]|0[0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])M$");
@@ -188,22 +187,32 @@ namespace SkyTeamTimeTableParser
                                             if (temp_string == "-" || temp_string.Substring(0, 1) == "-") { TEMP_ValidFrom = ValidFrom; }
                                             else
                                             {
-                                                TEMP_ValidFrom = DateTime.ParseExact(rgxdate1.Match(temp_string).Groups[0].Value, "d MMM", ci, DateTimeStyles.None);
+                                                TEMP_ValidFrom = DateTime.ParseExact(rgxdate1.Matches(temp_string)[0].Value, "d MMM", ci, DateTimeStyles.None);
                                             }
-                                        }                                        
-                                    }
-                                    if (String.Equals("-", temp_string) || temp_string.Substring(0, 1) == "-" || rgxdate2.Matches(temp_string).Count > 0)
-                                    {
-                                        // This can be a valid to check on minvalue. 
+                                        }
                                         if (TEMP_ValidTo == DateTime.MinValue)
                                         {
-                                            if (temp_string == "-" || temp_string.Substring(0, 1) == "-") { TEMP_ValidFrom = ValidFrom; }
+                                            if (temp_string == "-" || temp_string.Substring(0, 1) == "-") { TEMP_ValidTo = ValidTo; }
                                             else
                                             {
-                                                TEMP_ValidTo = DateTime.ParseExact(rgxdate2.Match(temp_string).Groups[0].Value, "d MMM", ci, DateTimeStyles.None);
+                                                string date2 = rgxdate1.Matches(temp_string)[1].Value;
+                                                TEMP_ValidTo = DateTime.ParseExact(rgxdate1.Matches(temp_string)[1].Value, "d MMM", ci, DateTimeStyles.None);
                                             }
                                         }
                                     }
+
+                                    //if (String.Equals("-", temp_string) || temp_string.Substring(0, 1) == "-" || rgxdate2.Matches(temp_string).Count > 0 || )
+                                    //{
+                                    //    // This can be a valid to check on minvalue. 
+                                    //    if (TEMP_ValidTo == DateTime.MinValue)
+                                    //    {
+                                    //        if (temp_string == "-" || temp_string.Substring(0, 1) == "-") { TEMP_ValidFrom = ValidFrom; }
+                                    //        else
+                                    //        {
+                                    //            TEMP_ValidTo = DateTime.ParseExact(rgxdate2.Match(temp_string).Groups[0].Value, "d MMM", ci, DateTimeStyles.None);
+                                    //        }
+                                    //    }
+                                    //}
                                     // Parsing flightdays
                                     if (rgxFlightDay.Matches(temp_string).Count > 0 || rgxFlightDay2.Matches(temp_string).Count > 0)                                    {
                                         // Flight days found!
