@@ -54,6 +54,7 @@ namespace SkyTeamTimeTableParser
             Regex rgxdate1 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)");
             Regex rgxdate2 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$");
             Regex rgxFlightDay = new Regex(@"^\d+$");
+            Regex rgxFlightDay2 = new Regex(@"\s[1234567](\s|$)");
             Regex rgxFlightTime = new Regex(@"^([0-9]|0[0-9]|1[0-9]|2[0-3])H([0-9]|0[0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])M$");
             List<CIFLight> CIFLights = new List<CIFLight> { };
             List<Rectangle> rectangles = new List<Rectangle>();
@@ -99,7 +100,7 @@ namespace SkyTeamTimeTableParser
                 
                 
                 // Loop through each page of the document
-                for (var page = 5; page <= pdfReader.NumberOfPages; page++)
+                for (var page = 244; page <= 244; page++)
                 //for (var page = 3; page <= pdfReader.NumberOfPages; page++)
                 {
 
@@ -204,11 +205,21 @@ namespace SkyTeamTimeTableParser
                                         }
                                     }
                                     // Parsing flightdays
-                                    if (rgxFlightDay.Matches(temp_string).Count > 0)
-                                    {
+                                    if (rgxFlightDay.Matches(temp_string).Count > 0 || rgxFlightDay2.Matches(temp_string).Count > 0)                                    {
                                         // Flight days found!
+                                        string y = null;
+                                        if (rgxFlightDay2.Matches(temp_string).Count > 0) 
+                                        {
+                                            foreach (Match ItemMatch in rgxFlightDay2.Matches(temp_string))
+                                            {
+                                                y = y + ItemMatch.Value;
+                                            }
+                                            y = y.Replace(" ", "");
+                                        }
+                                        else { y = temp_string; }
+
                                         char[] arr;
-                                        arr = temp_string.ToCharArray();
+                                        arr = y.ToCharArray();
 
                                         foreach (char c in arr)
                                         {
@@ -362,7 +373,7 @@ namespace SkyTeamTimeTableParser
                                         TEMP_FlightCodeShare = false;
                                         TEMP_FlightNextDayArrival = false;
                                     }
-                                    //Console.WriteLine(value);
+                                    Console.WriteLine(value);
                                 }
                             }
                         }

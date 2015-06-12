@@ -39,3 +39,14 @@
 "Operated by:  Etihad Airways"
 "31 Aug  -  31 Aug  2","22:30","12:05+1","KE7902*","345","8H35M"
 "Operated by:  Etihad Airways"
+
+
+"FROM:","Amsterdam, Netherlands","AMS"
+"TO:","Bogota, Colombia","BOG"
+"Validity","Days","Dep"
+"Time"
+"Arr"
+"Time"
+"Flight","Aircraft","Travel"
+"Time"
+"02 Jun  -  29 Aug    3  5  7","12:30","16:25","KL745","772","10H55M"
