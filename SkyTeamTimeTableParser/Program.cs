@@ -10,6 +10,8 @@ using iTextSharp.text.pdf.parser;
 using PDFReader;
 using System.Globalization;
 using System.IO;
+using System.Data.SqlClient;
+using System.Data;
 
 namespace SkyTeamTimeTableParser
 {
@@ -35,7 +37,7 @@ namespace SkyTeamTimeTableParser
             public String FlightAirline;
             public String FlightOperator;
             public String FlightAircraft;
-            public DateTime FlightDuration;
+            public String FlightDuration;
             public Boolean FlightCodeShare;
             public Boolean FlightNextDayArrival;
             public int FlightNextDays;
@@ -152,7 +154,7 @@ namespace SkyTeamTimeTableParser
                         Boolean TEMP_FlightCodeShare = false;
                         string TEMP_FlightNumber = null;
                         string TEMP_Aircraftcode = null;
-                        DateTime TEMP_DurationTime = new DateTime();
+                        TimeSpan TEMP_DurationTime = TimeSpan.MinValue;
                         Boolean TEMP_FlightNextDayArrival = false;
                         int TEMP_FlightNextDays = 0;
                         foreach (string line in lines)
@@ -306,9 +308,7 @@ namespace SkyTeamTimeTableParser
                                         var match = rgxFlightTime.Match(temp_string);
                                         intFlightTimeH = int.Parse(match.Groups[1].Value);
                                         intFlightTimeM = int.Parse(match.Groups[2].Value);                                       
-                                        DateTime date = DateTime.Now;
-                                        date = new DateTime(date.Year, date.Month, date.Day, intFlightTimeH, intFlightTimeM, 00);
-                                        TEMP_DurationTime = date;
+                                        TEMP_DurationTime = new TimeSpan(0, intFlightTimeH, intFlightTimeM, 0);                                        
                                         //int rgxFlightTimeH = rgxFlightTime.Match(temp_string).Groups[0].Value
                                         //TEMP_DurationTime = DateTime.ParseExact(temp_string, "HH\H mm \M", null);
                                         string TEMP_Airline = null;
@@ -334,7 +334,7 @@ namespace SkyTeamTimeTableParser
                                             FlightSunday = TEMP_FlightSunday,
                                             FlightNumber = TEMP_FlightNumber,
                                             FlightOperator = null,
-                                            FlightDuration = TEMP_DurationTime,
+                                            FlightDuration = TEMP_DurationTime.ToString(),
                                             FlightCodeShare = TEMP_FlightCodeShare,
                                             FlightNextDayArrival = TEMP_FlightNextDayArrival,
                                             FlightNextDays = TEMP_FlightNextDays
@@ -354,7 +354,7 @@ namespace SkyTeamTimeTableParser
                                         TEMP_ArrivalTime = new DateTime();
                                         TEMP_FlightNumber = null;
                                         TEMP_Aircraftcode = null;
-                                        TEMP_DurationTime = new DateTime();
+                                        TEMP_DurationTime = TimeSpan.MinValue;
                                         TEMP_FlightCodeShare = false;
                                         TEMP_FlightNextDayArrival = false;
                                         TEMP_FlightNextDays = 0;
@@ -383,12 +383,12 @@ namespace SkyTeamTimeTableParser
                                         TEMP_ArrivalTime = new DateTime();
                                         TEMP_FlightNumber = null;
                                         TEMP_Aircraftcode = null;
-                                        TEMP_DurationTime = new DateTime();
+                                        TEMP_DurationTime = TimeSpan.MinValue;
                                         TEMP_FlightCodeShare = false;
                                         TEMP_FlightNextDayArrival = false;
                                         TEMP_FlightNextDays = 0;
                                     }
-                                    Console.WriteLine(value);
+                                    //Console.WriteLine(value);
                                 }
                             }
                         }
@@ -415,8 +415,60 @@ namespace SkyTeamTimeTableParser
             file.Close();
 
             //Console.ReadKey();
+            Console.WriteLine("Insert into Database...");
+            for (int i = 0; i < CIFLights.Count; i++) // Loop through List with for)
+            {
+                using (SqlConnection connection = new SqlConnection("Server=(local);Database=CI-Import;Trusted_Connection=True;"))
+                {
+                    using (SqlCommand command = new SqlCommand())
+                    {
+                        command.Connection = connection;            // <== lacking
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.CommandText = "InsertFlight";
+                        command.Parameters.Add(new SqlParameter("@FlightSource", "SkyTeam"));
+                        command.Parameters.Add(new SqlParameter("@FromIATA", CIFLights[i].FromIATA));
+                        command.Parameters.Add(new SqlParameter("@ToIATA", CIFLights[i].ToIATA));
+                        command.Parameters.Add(new SqlParameter("@FromDate", CIFLights[i].FromDate));
+                        command.Parameters.Add(new SqlParameter("@ToDate", CIFLights[i].ToDate));
+                        command.Parameters.Add(new SqlParameter("@FlightMonday", CIFLights[i].FlightMonday));
+                        command.Parameters.Add(new SqlParameter("@FlightTuesday", CIFLights[i].FlightTuesday));
+                        command.Parameters.Add(new SqlParameter("@FlightWednesday", CIFLights[i].FlightWednesday));
+                        command.Parameters.Add(new SqlParameter("@FlightThursday", CIFLights[i].FlightThursday));
+                        command.Parameters.Add(new SqlParameter("@FlightFriday", CIFLights[i].FlightFriday));
+                        command.Parameters.Add(new SqlParameter("@FlightSaterday", CIFLights[i].FlightSaterday));
+                        command.Parameters.Add(new SqlParameter("@FlightSunday", CIFLights[i].FlightSunday));
+                        command.Parameters.Add(new SqlParameter("@DepartTime", CIFLights[i].DepartTime));
+                        command.Parameters.Add(new SqlParameter("@ArrivalTime", CIFLights[i].ArrivalTime));
+                        command.Parameters.Add(new SqlParameter("@FlightNumber", CIFLights[i].FlightNumber));
+                        command.Parameters.Add(new SqlParameter("@FlightAirline", CIFLights[i].FlightAirline));
+                        command.Parameters.Add(new SqlParameter("@FlightOperator", CIFLights[i].FlightOperator));
+                        command.Parameters.Add(new SqlParameter("@FlightAircraft", CIFLights[i].FlightAircraft));
+                        command.Parameters.Add(new SqlParameter("@FlightCodeShare", CIFLights[i].FlightCodeShare));
+                        command.Parameters.Add(new SqlParameter("@FlightNextDayArrival", CIFLights[i].FlightNextDayArrival));
+                        command.Parameters.Add(new SqlParameter("@FlightDuration", CIFLights[i].FlightDuration));
+                        command.Parameters.Add(new SqlParameter("@FlightNextDays", CIFLights[i].FlightNextDays));
+                        foreach (SqlParameter parameter in command.Parameters)
+                        {
+                            if (parameter.Value == null)
+                            {
+                                parameter.Value = DBNull.Value;
+                            }
+                        }
 
 
+                        try
+                        {
+                            connection.Open();
+                            int recordsAffected = command.ExecuteNonQuery();
+                        }
+
+                        finally
+                        {
+                            connection.Close();
+                        }
+                    }
+                }
+            }
 
         }     
 
