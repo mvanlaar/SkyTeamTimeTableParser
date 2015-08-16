@@ -60,12 +60,10 @@
     <Compile Include="SaveToXML.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="data\" />
     <Folder Include="output\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="data\Skyteam_Timetable.pdf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
