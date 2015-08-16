@@ -12,45 +12,36 @@ using System.Globalization;
 using System.IO;
 using System.Data.SqlClient;
 using System.Data;
+using System.Net;
 
 namespace SkyTeamTimeTableParser
 {
-    public class Program
+    class Program
     {
-        public class CIFLight
-        {
-            // Auto-implemented properties. 
-            public string FromIATA;
-            public string ToIATA;
-            public DateTime FromDate;
-            public DateTime ToDate;
-            public Boolean FlightMonday;
-            public Boolean FlightTuesday;
-            public Boolean FlightWednesday;
-            public Boolean FlightThursday;
-            public Boolean FlightFriday;
-            public Boolean FlightSaterday;
-            public Boolean FlightSunday;
-            public DateTime DepartTime;
-            public DateTime ArrivalTime;
-            public String FlightNumber;
-            public String FlightAirline;
-            public String FlightOperator;
-            public String FlightAircraft;
-            public String FlightDuration;
-            public Boolean FlightCodeShare;
-            public Boolean FlightNextDayArrival;
-            public int FlightNextDays;
-        }
-
         public static readonly List<string> _SkyTeamAircraftCode = new List<string>() { "100","313","319","321","330","333","343","346","388","733","735","310","318","320","32S","332","340","345","380","717","734","736","737", "739", "73G", "73J", "73W", "747", "74M", "753", "75W", "763", "767", "772", "777", "77W", "788", "AB6", "AT5", "ATR", "CR2", "CR9", "CRK", "E70", "E90", "EM2", "EQV", "ER4", "F50", "M11", "M90", "SF3", "738", "73C", "73H", "73R", "744", "74E", "752", "757", "762", "764", "76W", "773", "77L", "787", "A81", "AR8", "AT7", "BUS", "CR7", "CRJ", "DH4", "E75", "E95", "EMJ", "ER3", "ERJ", "F70", "M88", "S20", "SU9" };
 
         static void Main(string[] args)
         {
-            
+
+            // Downlaoding latest pdf from skyteam website
+            string path = AppDomain.CurrentDomain.BaseDirectory + "data\\Skyteam_Timetable.pdf";
+            const string ua = "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)";
+            const string referer = "http://www.skyteam.com/nl/Flights-and-Destinations/Download-Timetables/";
+            WebRequest.DefaultWebProxy = null;
+            using (System.Net.WebClient wc = new WebClient())
+            {
+                wc.Headers.Add("user-agent", ua);
+                wc.Headers.Add("Referer", referer);
+                wc.Proxy = null;
+                Console.WriteLine("Downloading latest skyteam timetable pdf file...");
+                wc.DownloadFile("https://services.skyteam.com/Timetable/Skyteam_Timetable.pdf", path);
+                Console.WriteLine("Download ready...");
+            }
+
+
             var text = new StringBuilder();
             CultureInfo ci = new CultureInfo("en-US");
-            string path = AppDomain.CurrentDomain.BaseDirectory + "data\\Skyteam_Timetable.pdf";
+            
             Regex rgxtime = new Regex(@"^([0-1]?[0-9]|[2][0-3]):([0-5][0-9])(\+1)?(\+2)?(\+-1)?$");
             Regex rgxFlightNumber = new Regex(@"^([A-Z]{2}|[A-Z]\d|\d[A-Z])[0-9](\d{1,4})?(\*)?$");
             Regex rgxIATAAirport = new Regex(@"^[A-Z]{3}$");
@@ -64,11 +55,12 @@ namespace SkyTeamTimeTableParser
             //rectangles.Add(new Rectangle(x+(j*offset), (y+i*offset), offset, offset));
             float distanceInPixelsFromLeft = 0;
             float distanceInPixelsFromBottom = 0;
-            float width = 306;//pdfReader.GetPageSize(page).Width / 2; // 306 deelt niet naar helft? 
+            float width = 306;//pdfReader.GetPageSize(page).Width / 2;
             float height = 792; // pdfReader.GetPageSize(page).Height;
-            // Formaat papaier 
+            // Format Paper
             // Letter		 612x792
             // A4		     595x842
+
             var left = new Rectangle(
                         distanceInPixelsFromLeft,
                         distanceInPixelsFromBottom,
@@ -96,7 +88,7 @@ namespace SkyTeamTimeTableParser
             {                 
                 //float pageHeight = pdfReader.GetPageSize.Height;
 
-                // Vaststellen valid from to date
+                // Valid to from dates
                 DateTime ValidFrom = new DateTime(2015, 6, 1);
                 DateTime ValidTo = new DateTime(2015, 8, 31);
                 
@@ -407,74 +399,95 @@ namespace SkyTeamTimeTableParser
             System.Xml.Serialization.XmlSerializer writer =
             new System.Xml.Serialization.XmlSerializer(CIFLights.GetType());
             string myDir = AppDomain.CurrentDomain.BaseDirectory + "\\output";
-            System.IO.Directory.CreateDirectory(myDir);
-            System.IO.StreamWriter file =
+            Directory.CreateDirectory(myDir);
+            StreamWriter file =
                new System.IO.StreamWriter("output\\output.xml");
 
             writer.Serialize(file, CIFLights);
             file.Close();
 
             //Console.ReadKey();
-            Console.WriteLine("Insert into Database...");
-            for (int i = 0; i < CIFLights.Count; i++) // Loop through List with for)
-            {
-                using (SqlConnection connection = new SqlConnection("Server=(local);Database=CI-Import;Trusted_Connection=True;"))
-                {
-                    using (SqlCommand command = new SqlCommand())
-                    {
-                        command.Connection = connection;            // <== lacking
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.CommandText = "InsertFlight";
-                        command.Parameters.Add(new SqlParameter("@FlightSource", "SkyTeam"));
-                        command.Parameters.Add(new SqlParameter("@FromIATA", CIFLights[i].FromIATA));
-                        command.Parameters.Add(new SqlParameter("@ToIATA", CIFLights[i].ToIATA));
-                        command.Parameters.Add(new SqlParameter("@FromDate", CIFLights[i].FromDate));
-                        command.Parameters.Add(new SqlParameter("@ToDate", CIFLights[i].ToDate));
-                        command.Parameters.Add(new SqlParameter("@FlightMonday", CIFLights[i].FlightMonday));
-                        command.Parameters.Add(new SqlParameter("@FlightTuesday", CIFLights[i].FlightTuesday));
-                        command.Parameters.Add(new SqlParameter("@FlightWednesday", CIFLights[i].FlightWednesday));
-                        command.Parameters.Add(new SqlParameter("@FlightThursday", CIFLights[i].FlightThursday));
-                        command.Parameters.Add(new SqlParameter("@FlightFriday", CIFLights[i].FlightFriday));
-                        command.Parameters.Add(new SqlParameter("@FlightSaterday", CIFLights[i].FlightSaterday));
-                        command.Parameters.Add(new SqlParameter("@FlightSunday", CIFLights[i].FlightSunday));
-                        command.Parameters.Add(new SqlParameter("@DepartTime", CIFLights[i].DepartTime));
-                        command.Parameters.Add(new SqlParameter("@ArrivalTime", CIFLights[i].ArrivalTime));
-                        command.Parameters.Add(new SqlParameter("@FlightNumber", CIFLights[i].FlightNumber));
-                        command.Parameters.Add(new SqlParameter("@FlightAirline", CIFLights[i].FlightAirline));
-                        command.Parameters.Add(new SqlParameter("@FlightOperator", CIFLights[i].FlightOperator));
-                        command.Parameters.Add(new SqlParameter("@FlightAircraft", CIFLights[i].FlightAircraft));
-                        command.Parameters.Add(new SqlParameter("@FlightCodeShare", CIFLights[i].FlightCodeShare));
-                        command.Parameters.Add(new SqlParameter("@FlightNextDayArrival", CIFLights[i].FlightNextDayArrival));
-                        command.Parameters.Add(new SqlParameter("@FlightDuration", CIFLights[i].FlightDuration));
-                        command.Parameters.Add(new SqlParameter("@FlightNextDays", CIFLights[i].FlightNextDays));
-                        foreach (SqlParameter parameter in command.Parameters)
-                        {
-                            if (parameter.Value == null)
-                            {
-                                parameter.Value = DBNull.Value;
-                            }
-                        }
+            //Console.WriteLine("Insert into Database...");
+            //for (int i = 0; i < CIFLights.Count; i++) // Loop through List with for)
+            //{
+            //    using (SqlConnection connection = new SqlConnection("Server=(local);Database=CI-Import;Trusted_Connection=True;"))
+            //    {
+            //        using (SqlCommand command = new SqlCommand())
+            //        {
+            //            command.Connection = connection;            // <== lacking
+            //            command.CommandType = CommandType.StoredProcedure;
+            //            command.CommandText = "InsertFlight";
+            //            command.Parameters.Add(new SqlParameter("@FlightSource", "SkyTeam"));
+            //            command.Parameters.Add(new SqlParameter("@FromIATA", CIFLights[i].FromIATA));
+            //            command.Parameters.Add(new SqlParameter("@ToIATA", CIFLights[i].ToIATA));
+            //            command.Parameters.Add(new SqlParameter("@FromDate", CIFLights[i].FromDate));
+            //            command.Parameters.Add(new SqlParameter("@ToDate", CIFLights[i].ToDate));
+            //            command.Parameters.Add(new SqlParameter("@FlightMonday", CIFLights[i].FlightMonday));
+            //            command.Parameters.Add(new SqlParameter("@FlightTuesday", CIFLights[i].FlightTuesday));
+            //            command.Parameters.Add(new SqlParameter("@FlightWednesday", CIFLights[i].FlightWednesday));
+            //            command.Parameters.Add(new SqlParameter("@FlightThursday", CIFLights[i].FlightThursday));
+            //            command.Parameters.Add(new SqlParameter("@FlightFriday", CIFLights[i].FlightFriday));
+            //            command.Parameters.Add(new SqlParameter("@FlightSaterday", CIFLights[i].FlightSaterday));
+            //            command.Parameters.Add(new SqlParameter("@FlightSunday", CIFLights[i].FlightSunday));
+            //            command.Parameters.Add(new SqlParameter("@DepartTime", CIFLights[i].DepartTime));
+            //            command.Parameters.Add(new SqlParameter("@ArrivalTime", CIFLights[i].ArrivalTime));
+            //            command.Parameters.Add(new SqlParameter("@FlightNumber", CIFLights[i].FlightNumber));
+            //            command.Parameters.Add(new SqlParameter("@FlightAirline", CIFLights[i].FlightAirline));
+            //            command.Parameters.Add(new SqlParameter("@FlightOperator", CIFLights[i].FlightOperator));
+            //            command.Parameters.Add(new SqlParameter("@FlightAircraft", CIFLights[i].FlightAircraft));
+            //            command.Parameters.Add(new SqlParameter("@FlightCodeShare", CIFLights[i].FlightCodeShare));
+            //            command.Parameters.Add(new SqlParameter("@FlightNextDayArrival", CIFLights[i].FlightNextDayArrival));
+            //            command.Parameters.Add(new SqlParameter("@FlightDuration", CIFLights[i].FlightDuration));
+            //            command.Parameters.Add(new SqlParameter("@FlightNextDays", CIFLights[i].FlightNextDays));
+            //            foreach (SqlParameter parameter in command.Parameters)
+            //            {
+            //                if (parameter.Value == null)
+            //                {
+            //                    parameter.Value = DBNull.Value;
+            //                }
+            //            }
 
 
-                        try
-                        {
-                            connection.Open();
-                            int recordsAffected = command.ExecuteNonQuery();
-                        }
+            //            try
+            //            {
+            //                connection.Open();
+            //                int recordsAffected = command.ExecuteNonQuery();
+            //            }
 
-                        finally
-                        {
-                            connection.Close();
-                        }
-                    }
-                }
+            //            finally
+            //            {
+            //                connection.Close();
+            //            }
+            //        }
+            //    }
             }
 
-        }     
+    }     
 
-
-        
-        
+    public class CIFLight
+    {
+        // Auto-implemented properties. 
+        public string FromIATA;
+        public string ToIATA;
+        public DateTime FromDate;
+        public DateTime ToDate;
+        public Boolean FlightMonday;
+        public Boolean FlightTuesday;
+        public Boolean FlightWednesday;
+        public Boolean FlightThursday;
+        public Boolean FlightFriday;
+        public Boolean FlightSaterday;
+        public Boolean FlightSunday;
+        public DateTime DepartTime;
+        public DateTime ArrivalTime;
+        public String FlightNumber;
+        public String FlightAirline;
+        public String FlightOperator;
+        public String FlightAircraft;
+        public String FlightDuration;
+        public Boolean FlightCodeShare;
+        public Boolean FlightNextDayArrival;
+        public int FlightNextDays;
     }
 
 }
