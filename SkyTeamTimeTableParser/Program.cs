@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using iTextSharp;
+//using iTextSharp;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.parser;
@@ -25,27 +25,30 @@ namespace SkyTeamTimeTableParser
 
             // Downlaoding latest pdf from skyteam website
             string path = AppDomain.CurrentDomain.BaseDirectory + "data\\Skyteam_Timetable.pdf";
+            Uri url = new Uri("https://services.skyteam.com/Timetable/Skyteam_Timetable.pdf");
             const string ua = "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)";
             const string referer = "http://www.skyteam.com/nl/Flights-and-Destinations/Download-Timetables/";
-            WebRequest.DefaultWebProxy = null;
-            using (System.Net.WebClient wc = new WebClient())
+            if (!File.Exists(path))
             {
-                wc.Headers.Add("user-agent", ua);
-                wc.Headers.Add("Referer", referer);
-                wc.Proxy = null;
-                Console.WriteLine("Downloading latest skyteam timetable pdf file...");
-                wc.DownloadFile("https://services.skyteam.com/Timetable/Skyteam_Timetable.pdf", path);
-                Console.WriteLine("Download ready...");
+                WebRequest.DefaultWebProxy = null;
+                using (System.Net.WebClient wc = new WebClient())
+                {
+                    wc.Headers.Add("user-agent", ua);
+                    wc.Headers.Add("Referer", referer);
+                    wc.Proxy = null;
+                    Console.WriteLine("Downloading latest skyteam timetable pdf file...");
+                    wc.DownloadFile(url, path);
+                    Console.WriteLine("Download ready...");
+                }
             }
-
-
             var text = new StringBuilder();
             CultureInfo ci = new CultureInfo("en-US");
             
             Regex rgxtime = new Regex(@"^([0-1]?[0-9]|[2][0-3]):([0-5][0-9])(\+1)?(\+2)?(\+-1)?$");
             Regex rgxFlightNumber = new Regex(@"^([A-Z]{2}|[A-Z]\d|\d[A-Z])[0-9](\d{1,4})?(\*)?$");
             Regex rgxIATAAirport = new Regex(@"^[A-Z]{3}$");
-            Regex rgxdate1 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)");            
+            Regex rgxdate1 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)");
+            Regex rgxdate2 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([0-9]{4})");            
             Regex rgxFlightDay = new Regex(@"^\d+$");
             Regex rgxFlightDay2 = new Regex(@"\s[1234567](\s|$)");
             Regex rgxFlightTime = new Regex(@"^([0-9]|0[0-9]|1[0-9]|2[0-3])H([0-9]|0[0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])M$");
@@ -60,6 +63,12 @@ namespace SkyTeamTimeTableParser
             // Format Paper
             // Letter		 612x792
             // A4		     595x842
+
+            var firstpage = new Rectangle(
+                        distanceInPixelsFromLeft,
+                        distanceInPixelsFromBottom,
+                        width,
+                        height);
 
             var left = new Rectangle(
                         distanceInPixelsFromLeft,
@@ -86,31 +95,41 @@ namespace SkyTeamTimeTableParser
 
             using (var pdfReader = new PdfReader(path))
             {                 
-                //float pageHeight = pdfReader.GetPageSize.Height;
+                
 
-                // Valid to from dates
-                DateTime ValidFrom = new DateTime(2015, 6, 1);
-                DateTime ValidTo = new DateTime(2015, 8, 31);
                 
-                
+
+                ITextExtractionStrategy fpstrategy = new SimpleTextExtractionStrategy();
+
+                var fpcurrentText = PdfTextExtractor.GetTextFromPage(
+                    pdfReader,
+                    1,
+                    fpstrategy);
+
+                fpcurrentText =
+                    Encoding.UTF8.GetString(Encoding.Convert(
+                        Encoding.Default,
+                        Encoding.UTF8,
+                        Encoding.Default.GetBytes(fpcurrentText)));
+               
+                MatchCollection matches = rgxdate2.Matches(fpcurrentText);
+
+                string validfrom = matches[0].Value;
+                string validto = matches[1].Value;
+
+                DateTime ValidFrom = DateTime.ParseExact(validfrom, "dd MMM yyyy", ci);
+                DateTime ValidTo = DateTime.ParseExact(validto, "dd MMM yyyy", ci);
                 // Loop through each page of the document
-                for (var page = 5; page <= pdfReader.NumberOfPages; page++)
-                //for (var page = 3; page <= pdfReader.NumberOfPages; page++)
+                for (var page = 5; page <= pdfReader.NumberOfPages; page++)                
                 {
 
                     Console.WriteLine("Parsing page {0}...", page);
-                    //float pageHeight = pdfReader.GetPageSize(page).Height;
-                   
                     
-                    //System.Diagnostics.Debug.WriteLine(currentText);
-
-
                     foreach (Rectangle rect in rectangles)
                     {
                         ITextExtractionStrategy its = new CSVTextExtractionStrategy();
                         var filters = new RenderFilter[1];
-                        filters[0] = new RegionTextRenderFilter(rect);
-                        //filters[1] = new RegionTextRenderFilter(rechts);
+                        filters[0] = new RegionTextRenderFilter(rect);                       
 
                         ITextExtractionStrategy strategy =
                             new FilteredTextRenderListener(
@@ -157,9 +176,9 @@ namespace SkyTeamTimeTableParser
                             {
                                 if (!String.IsNullOrEmpty(value.Trim()))
                                 {
-                                    // getrimde string temp value
+                                    // Trim the string
                                     string temp_string = value.Trim();
-                                    // Van en Naar
+                                    // From and To
                                     if (rgxIATAAirport.Matches(temp_string).Count > 0)
                                     {
                                         if (String.IsNullOrEmpty(TEMP_FromIATA))
@@ -177,7 +196,7 @@ namespace SkyTeamTimeTableParser
                                     // Valid from en to times
                                     if (String.Equals("-", temp_string) || temp_string.Substring(0, 1) == "-" || rgxdate1.Matches(temp_string).Count > 0)
                                     {
-                                        // Dit kan een validfrom or to zijn. Controle op basis van de Temp waarde. 
+                                        // This can be a valid from or to. Check based on temp variable min value 
                                         if (TEMP_ValidFrom == DateTime.MinValue)
                                         {
                                             if (temp_string == "-" || temp_string.Substring(0, 1) == "-") { TEMP_ValidFrom = ValidFrom; }
@@ -231,19 +250,18 @@ namespace SkyTeamTimeTableParser
                                         }
 
                                     }
-                                    // Vertrek en aankomst tijden
+                                    // Depart and arrival times
                                     if (rgxtime.Matches(temp_string).Count > 0)
                                     {
                                                                                   
                                         if (TEMP_DepartTime == DateTime.MinValue)
                                         {
-                                            // tijd parsing                                                
-                                            DateTime.TryParse(temp_string.Trim(), out TEMP_DepartTime);
-                                            //DateTime.TryParseExact(temp_string, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out TEMP_DepartTime);
+                                            // Time Parsing                                             
+                                            DateTime.TryParse(temp_string.Trim(), out TEMP_DepartTime);                                            
                                         }
                                         else
                                         {
-                                            // Er is al een waarde voor from dus dit is de to.
+                                            // There is a from value so this is to.
                                             string x = temp_string;
                                             if (x.Contains("+1"))
                                             {
@@ -282,7 +300,7 @@ namespace SkyTeamTimeTableParser
                                             }
                                         } 
                                     }
-                                    // Vliegtuig parsing
+                                    // Aircraft parsing
                                     if (temp_string.Length == 3)
                                     {
                                         if (_SkyTeamAircraftCode.Contains(temp_string, StringComparer.OrdinalIgnoreCase))
@@ -294,7 +312,7 @@ namespace SkyTeamTimeTableParser
                                     }
                                     if (TEMP_Aircraftcode != null && rgxFlightTime.Matches(temp_string).Count > 0)
                                     {
-                                        // Aircraft code is gevonden, dit moet nu de vlucht tijd zijn. En dus de laatste waarde in de reeks.
+                                        // Aircraft code has been found so this has to be the flighttimes. and so the last value of the string...
                                         int intFlightTimeH = 0;
                                         int intFlightTimeM = 0;
                                         var match = rgxFlightTime.Match(temp_string);
@@ -353,7 +371,7 @@ namespace SkyTeamTimeTableParser
                                     }
                                     if (temp_string.Contains("Operated by: "))
                                     {
-                                        // Ok dit moet worden toegevoegd aan het vorige record.
+                                        // Ok, this has to be added to the last record.
                                         CIFLights[CIFLights.Count - 1].FlightOperator = temp_string.Replace("Operated by: ", "").Trim();
                                         CIFLights[CIFLights.Count - 1].FlightCodeShare = true;
                                     }
@@ -385,10 +403,7 @@ namespace SkyTeamTimeTableParser
                             }
                         }
 
-                    }
-
-                   
-                    //text.Append(currentText);                    
+                    }              
                 }
             }
 
@@ -460,10 +475,10 @@ namespace SkyTeamTimeTableParser
             //            }
             //        }
             //    }
-            }
+            }        
+    }
 
-    }     
-
+    
     public class CIFLight
     {
         // Auto-implemented properties. 
