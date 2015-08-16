@@ -96,7 +96,7 @@ namespace SkyTeamTimeTableParser
             using (var pdfReader = new PdfReader(path))
             {                 
                 
-
+                // Parsing first page for valid from and to dates.
                 
 
                 ITextExtractionStrategy fpstrategy = new SimpleTextExtractionStrategy();
