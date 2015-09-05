@@ -26,6 +26,7 @@ namespace SkyTeamTimeTableParser
             // Downlaoding latest pdf from skyteam website
             string path = AppDomain.CurrentDomain.BaseDirectory + "data\\Skyteam_Timetable.pdf";
             Uri url = new Uri("https://services.skyteam.com/Timetable/Skyteam_Timetable.pdf");
+            File.Delete(path);
             const string ua = "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)";
             const string referer = "http://www.skyteam.com/nl/Flights-and-Destinations/Download-Timetables/";
             if (!File.Exists(path))
@@ -43,12 +44,12 @@ namespace SkyTeamTimeTableParser
             }
             var text = new StringBuilder();
             CultureInfo ci = new CultureInfo("en-US");
-            
+
             Regex rgxtime = new Regex(@"^([0-1]?[0-9]|[2][0-3]):([0-5][0-9])(\+1)?(\+2)?(\+-1)?$");
             Regex rgxFlightNumber = new Regex(@"^([A-Z]{2}|[A-Z]\d|\d[A-Z])[0-9](\d{1,4})?(\*)?$");
             Regex rgxIATAAirport = new Regex(@"^[A-Z]{3}$");
             Regex rgxdate1 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)");
-            Regex rgxdate2 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([0-9]{4})");            
+            Regex rgxdate2 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([0-9]{4})");
             Regex rgxFlightDay = new Regex(@"^\d+$");
             Regex rgxFlightDay2 = new Regex(@"\s[1234567](\s|$)");
             Regex rgxFlightTime = new Regex(@"^([0-9]|0[0-9]|1[0-9]|2[0-3])H([0-9]|0[0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])M$");
@@ -81,23 +82,22 @@ namespace SkyTeamTimeTableParser
                        distanceInPixelsFromBottom,
                        612,
                        height);
-            
-            
+
+
             rectangles.Add(left);
             rectangles.Add(right);
 
             // The PdfReader object implements IDisposable.Dispose, so you can
             // wrap it in the using keyword to automatically dispose of it
             Console.WriteLine("Opening PDF File...");
-            
+
             //PdfReader reader = new PdfReader(path);
-            
+
 
             using (var pdfReader = new PdfReader(path))
-            {                 
-                
-                // Parsing first page for valid from and to dates.
-                
+            {
+
+                // Parsing first page for valid from and to dates.                
 
                 ITextExtractionStrategy fpstrategy = new SimpleTextExtractionStrategy();
 
@@ -111,7 +111,7 @@ namespace SkyTeamTimeTableParser
                         Encoding.Default,
                         Encoding.UTF8,
                         Encoding.Default.GetBytes(fpcurrentText)));
-               
+
                 MatchCollection matches = rgxdate2.Matches(fpcurrentText);
 
                 string validfrom = matches[0].Value;
@@ -120,16 +120,16 @@ namespace SkyTeamTimeTableParser
                 DateTime ValidFrom = DateTime.ParseExact(validfrom, "dd MMM yyyy", ci);
                 DateTime ValidTo = DateTime.ParseExact(validto, "dd MMM yyyy", ci);
                 // Loop through each page of the document
-                for (var page = 5; page <= pdfReader.NumberOfPages; page++)                
+                for (var page = 5; page <= pdfReader.NumberOfPages; page++)
                 {
 
                     Console.WriteLine("Parsing page {0}...", page);
-                    
+
                     foreach (Rectangle rect in rectangles)
                     {
                         ITextExtractionStrategy its = new CSVTextExtractionStrategy();
                         var filters = new RenderFilter[1];
-                        filters[0] = new RegionTextRenderFilter(rect);                       
+                        filters[0] = new RegionTextRenderFilter(rect);
 
                         ITextExtractionStrategy strategy =
                             new FilteredTextRenderListener(
@@ -182,13 +182,13 @@ namespace SkyTeamTimeTableParser
                                     if (rgxIATAAirport.Matches(temp_string).Count > 0)
                                     {
                                         if (String.IsNullOrEmpty(TEMP_FromIATA))
-                                        {                                            
+                                        {
                                             TEMP_FromIATA = rgxIATAAirport.Match(temp_string).Groups[0].Value;
                                         }
                                         else
                                         {
                                             if (String.IsNullOrEmpty(TEMP_ToIATA) && !String.IsNullOrEmpty(TEMP_FromIATA))
-                                            {                                                
+                                            {
                                                 TEMP_ToIATA = rgxIATAAirport.Match(temp_string).Groups[0].Value;
                                             }
                                         }
@@ -214,12 +214,13 @@ namespace SkyTeamTimeTableParser
                                                 TEMP_ValidTo = DateTime.ParseExact(rgxdate1.Matches(temp_string)[1].Value, "d MMM", ci, DateTimeStyles.None);
                                             }
                                         }
-                                    }                                   
+                                    }
                                     // Parsing flightdays
-                                    if (rgxFlightDay.Matches(temp_string).Count > 0 || rgxFlightDay2.Matches(temp_string).Count > 0)                                    {
+                                    if (rgxFlightDay.Matches(temp_string).Count > 0 || rgxFlightDay2.Matches(temp_string).Count > 0)
+                                    {
                                         // Flight days found!
                                         string y = null;
-                                        if (rgxFlightDay2.Matches(temp_string).Count > 0) 
+                                        if (rgxFlightDay2.Matches(temp_string).Count > 0)
                                         {
                                             foreach (Match ItemMatch in rgxFlightDay2.Matches(temp_string))
                                             {
@@ -230,7 +231,8 @@ namespace SkyTeamTimeTableParser
                                         else { y = temp_string; }
                                         y = y.Trim();
 
-                                        if (!_SkyTeamAircraftCode.Contains(y, StringComparer.OrdinalIgnoreCase)) { 
+                                        if (!_SkyTeamAircraftCode.Contains(y, StringComparer.OrdinalIgnoreCase))
+                                        {
                                             // Check to see it is not the airplane type.
                                             char[] arr;
                                             arr = y.ToCharArray();
@@ -245,7 +247,7 @@ namespace SkyTeamTimeTableParser
                                                 if (TEMP_Conversie == 5) { TEMP_FlightThursday = true; }
                                                 if (TEMP_Conversie == 6) { TEMP_FlightFriday = true; }
                                                 if (TEMP_Conversie == 7) { TEMP_FlightSaterday = true; }
-                                                
+
                                             }
                                         }
 
@@ -253,11 +255,11 @@ namespace SkyTeamTimeTableParser
                                     // Depart and arrival times
                                     if (rgxtime.Matches(temp_string).Count > 0)
                                     {
-                                                                                  
+
                                         if (TEMP_DepartTime == DateTime.MinValue)
                                         {
                                             // Time Parsing                                             
-                                            DateTime.TryParse(temp_string.Trim(), out TEMP_DepartTime);                                            
+                                            DateTime.TryParse(temp_string.Trim(), out TEMP_DepartTime);
                                         }
                                         else
                                         {
@@ -284,28 +286,30 @@ namespace SkyTeamTimeTableParser
                                                 TEMP_FlightNextDays = -1;
                                                 TEMP_FlightNextDayArrival = true;
                                             }
-                                            DateTime.TryParse(x.Trim(), out TEMP_ArrivalTime);                                            
-                                        }                                         
+                                            DateTime.TryParse(x.Trim(), out TEMP_ArrivalTime);
+                                        }
                                     }
                                     // FlightNumber Parsing
                                     if (rgxFlightNumber.IsMatch(temp_string))
                                     {
                                         // Extra check for SU9 flight number and Aircraft Type
-                                        if (TEMP_FlightNumber == null) { 
+                                        if (TEMP_FlightNumber == null)
+                                        {
                                             TEMP_FlightNumber = temp_string;
                                             if (temp_string.Contains("*"))
                                             {
                                                 TEMP_FlightCodeShare = true;
                                                 TEMP_FlightNumber = TEMP_FlightNumber.Replace("*", "");
                                             }
-                                        } 
+                                        }
                                     }
                                     // Aircraft parsing
                                     if (temp_string.Length == 3)
                                     {
                                         if (_SkyTeamAircraftCode.Contains(temp_string, StringComparer.OrdinalIgnoreCase))
                                         {
-                                            if (TEMP_Aircraftcode == null) { 
+                                            if (TEMP_Aircraftcode == null)
+                                            {
                                                 TEMP_Aircraftcode = temp_string;
                                             }
                                         }
@@ -317,13 +321,13 @@ namespace SkyTeamTimeTableParser
                                         int intFlightTimeM = 0;
                                         var match = rgxFlightTime.Match(temp_string);
                                         intFlightTimeH = int.Parse(match.Groups[1].Value);
-                                        intFlightTimeM = int.Parse(match.Groups[2].Value);                                       
-                                        TEMP_DurationTime = new TimeSpan(0, intFlightTimeH, intFlightTimeM, 0);                                        
+                                        intFlightTimeM = int.Parse(match.Groups[2].Value);
+                                        TEMP_DurationTime = new TimeSpan(0, intFlightTimeH, intFlightTimeM, 0);
                                         //int rgxFlightTimeH = rgxFlightTime.Match(temp_string).Groups[0].Value
                                         //TEMP_DurationTime = DateTime.ParseExact(temp_string, "HH\H mm \M", null);
                                         string TEMP_Airline = null;
-                                        if (TEMP_Aircraftcode == "BUS") { TEMP_Airline = null;}
-                                        else { TEMP_Airline = TEMP_FlightNumber.Substring(0,2);}
+                                        if (TEMP_Aircraftcode == "BUS") { TEMP_Airline = null; }
+                                        else { TEMP_Airline = TEMP_FlightNumber.Substring(0, 2); }
 
                                         CIFLights.Add(new CIFLight
                                         {
@@ -403,13 +407,13 @@ namespace SkyTeamTimeTableParser
                             }
                         }
 
-                    }              
+                    }
                 }
             }
 
             // You'll do something else with it, here I write it to a console window
             // Console.WriteLine(text.ToString());
-            
+
             // Write the list of objects to a file.
             System.Xml.Serialization.XmlSerializer writer =
             new System.Xml.Serialization.XmlSerializer(CIFLights.GetType());
@@ -422,60 +426,61 @@ namespace SkyTeamTimeTableParser
             file.Close();
 
             //Console.ReadKey();
-            //Console.WriteLine("Insert into Database...");
-            //for (int i = 0; i < CIFLights.Count; i++) // Loop through List with for)
-            //{
-            //    using (SqlConnection connection = new SqlConnection("Server=(local);Database=CI-Import;Trusted_Connection=True;"))
-            //    {
-            //        using (SqlCommand command = new SqlCommand())
-            //        {
-            //            command.Connection = connection;            // <== lacking
-            //            command.CommandType = CommandType.StoredProcedure;
-            //            command.CommandText = "InsertFlight";
-            //            command.Parameters.Add(new SqlParameter("@FlightSource", "SkyTeam"));
-            //            command.Parameters.Add(new SqlParameter("@FromIATA", CIFLights[i].FromIATA));
-            //            command.Parameters.Add(new SqlParameter("@ToIATA", CIFLights[i].ToIATA));
-            //            command.Parameters.Add(new SqlParameter("@FromDate", CIFLights[i].FromDate));
-            //            command.Parameters.Add(new SqlParameter("@ToDate", CIFLights[i].ToDate));
-            //            command.Parameters.Add(new SqlParameter("@FlightMonday", CIFLights[i].FlightMonday));
-            //            command.Parameters.Add(new SqlParameter("@FlightTuesday", CIFLights[i].FlightTuesday));
-            //            command.Parameters.Add(new SqlParameter("@FlightWednesday", CIFLights[i].FlightWednesday));
-            //            command.Parameters.Add(new SqlParameter("@FlightThursday", CIFLights[i].FlightThursday));
-            //            command.Parameters.Add(new SqlParameter("@FlightFriday", CIFLights[i].FlightFriday));
-            //            command.Parameters.Add(new SqlParameter("@FlightSaterday", CIFLights[i].FlightSaterday));
-            //            command.Parameters.Add(new SqlParameter("@FlightSunday", CIFLights[i].FlightSunday));
-            //            command.Parameters.Add(new SqlParameter("@DepartTime", CIFLights[i].DepartTime));
-            //            command.Parameters.Add(new SqlParameter("@ArrivalTime", CIFLights[i].ArrivalTime));
-            //            command.Parameters.Add(new SqlParameter("@FlightNumber", CIFLights[i].FlightNumber));
-            //            command.Parameters.Add(new SqlParameter("@FlightAirline", CIFLights[i].FlightAirline));
-            //            command.Parameters.Add(new SqlParameter("@FlightOperator", CIFLights[i].FlightOperator));
-            //            command.Parameters.Add(new SqlParameter("@FlightAircraft", CIFLights[i].FlightAircraft));
-            //            command.Parameters.Add(new SqlParameter("@FlightCodeShare", CIFLights[i].FlightCodeShare));
-            //            command.Parameters.Add(new SqlParameter("@FlightNextDayArrival", CIFLights[i].FlightNextDayArrival));
-            //            command.Parameters.Add(new SqlParameter("@FlightDuration", CIFLights[i].FlightDuration));
-            //            command.Parameters.Add(new SqlParameter("@FlightNextDays", CIFLights[i].FlightNextDays));
-            //            foreach (SqlParameter parameter in command.Parameters)
-            //            {
-            //                if (parameter.Value == null)
-            //                {
-            //                    parameter.Value = DBNull.Value;
-            //                }
-            //            }
+            Console.WriteLine("Insert into Database...");
+            for (int i = 0; i < CIFLights.Count; i++) // Loop through List with for)
+            {
+                using (SqlConnection connection = new SqlConnection("Server=(local);Database=CI-Import;Trusted_Connection=True;"))
+                {
+                    using (SqlCommand command = new SqlCommand())
+                    {
+                        command.Connection = connection;            // <== lacking
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.CommandText = "InsertFlight";
+                        command.Parameters.Add(new SqlParameter("@FlightSource", "SkyTeam"));
+                        command.Parameters.Add(new SqlParameter("@FromIATA", CIFLights[i].FromIATA));
+                        command.Parameters.Add(new SqlParameter("@ToIATA", CIFLights[i].ToIATA));
+                        command.Parameters.Add(new SqlParameter("@FromDate", CIFLights[i].FromDate));
+                        command.Parameters.Add(new SqlParameter("@ToDate", CIFLights[i].ToDate));
+                        command.Parameters.Add(new SqlParameter("@FlightMonday", CIFLights[i].FlightMonday));
+                        command.Parameters.Add(new SqlParameter("@FlightTuesday", CIFLights[i].FlightTuesday));
+                        command.Parameters.Add(new SqlParameter("@FlightWednesday", CIFLights[i].FlightWednesday));
+                        command.Parameters.Add(new SqlParameter("@FlightThursday", CIFLights[i].FlightThursday));
+                        command.Parameters.Add(new SqlParameter("@FlightFriday", CIFLights[i].FlightFriday));
+                        command.Parameters.Add(new SqlParameter("@FlightSaterday", CIFLights[i].FlightSaterday));
+                        command.Parameters.Add(new SqlParameter("@FlightSunday", CIFLights[i].FlightSunday));
+                        command.Parameters.Add(new SqlParameter("@DepartTime", CIFLights[i].DepartTime));
+                        command.Parameters.Add(new SqlParameter("@ArrivalTime", CIFLights[i].ArrivalTime));
+                        command.Parameters.Add(new SqlParameter("@FlightNumber", CIFLights[i].FlightNumber));
+                        command.Parameters.Add(new SqlParameter("@FlightAirline", CIFLights[i].FlightAirline));
+                        command.Parameters.Add(new SqlParameter("@FlightOperator", CIFLights[i].FlightOperator));
+                        command.Parameters.Add(new SqlParameter("@FlightAircraft", CIFLights[i].FlightAircraft));
+                        command.Parameters.Add(new SqlParameter("@FlightCodeShare", CIFLights[i].FlightCodeShare));
+                        command.Parameters.Add(new SqlParameter("@FlightNextDayArrival", CIFLights[i].FlightNextDayArrival));
+                        command.Parameters.Add(new SqlParameter("@FlightDuration", CIFLights[i].FlightDuration));
+                        command.Parameters.Add(new SqlParameter("@FlightNextDays", CIFLights[i].FlightNextDays));
+                        foreach (SqlParameter parameter in command.Parameters)
+                        {
+                            if (parameter.Value == null)
+                            {
+                                parameter.Value = DBNull.Value;
+                            }
+                        }
 
 
-            //            try
-            //            {
-            //                connection.Open();
-            //                int recordsAffected = command.ExecuteNonQuery();
-            //            }
+                        try
+                        {
+                            connection.Open();
+                            int recordsAffected = command.ExecuteNonQuery();
+                        }
 
-            //            finally
-            //            {
-            //                connection.Close();
-            //            }
-            //        }
-            //    }
-            }        
+                        finally
+                        {
+                            connection.Close();
+                        }
+                    }
+                }
+            }
+        }      
     }
 
     
