@@ -25,8 +25,7 @@ namespace SkyTeamTimeTableParser
 
             // Downlaoding latest pdf from skyteam website
             string path = AppDomain.CurrentDomain.BaseDirectory + "data\\Skyteam_Timetable.pdf";
-            Uri url = new Uri("https://services.skyteam.com/Timetable/Skyteam_Timetable.pdf");
-            File.Delete(path);
+            Uri url = new Uri("https://services.skyteam.com/Timetable/Skyteam_Timetable.pdf");            
             const string ua = "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)";
             const string referer = "http://www.skyteam.com/nl/Flights-and-Destinations/Download-Timetables/";
             if (!File.Exists(path))
@@ -179,7 +178,7 @@ namespace SkyTeamTimeTableParser
                                     // Trim the string
                                     string temp_string = value.Trim();
                                     // From and To
-                                    if (rgxIATAAirport.Matches(temp_string).Count > 0)
+                                    if ((rgxIATAAirport.Matches(temp_string).Count > 0) && !(_SkyTeamAircraftCode.Contains(temp_string, StringComparer.OrdinalIgnoreCase)))
                                     {
                                         if (String.IsNullOrEmpty(TEMP_FromIATA))
                                         {
@@ -328,6 +327,28 @@ namespace SkyTeamTimeTableParser
                                         string TEMP_Airline = null;
                                         if (TEMP_Aircraftcode == "BUS") { TEMP_Airline = null; }
                                         else { TEMP_Airline = TEMP_FlightNumber.Substring(0, 2); }
+
+
+                                        // Bugfixing pages without flight destination or departure info. Check if we have a flightnumber equal to this flight. and use the from and to.
+                                        if (TEMP_FromIATA == null)
+                                        {
+                                            CIFLight Flight = CIFLights.Find(item => item.FlightNumber == TEMP_FlightNumber);
+                                            if (Flight != null) // check item isn't null
+                                            {
+                                                TEMP_FromIATA = Flight.FromIATA;
+                                            }
+                                        }
+
+                                        if (TEMP_ToIATA == null)
+                                        {
+                                            CIFLight Flight = CIFLights.Find(item => item.FlightNumber == TEMP_FlightNumber);
+                                            if (Flight != null) // check item isn't null
+                                            {
+                                                TEMP_ToIATA = Flight.ToIATA;
+                                            }
+                                        }
+
+                                        // If there is still no from and to information we have to parse it from the previous page. Or pages before this?
 
                                         CIFLights.Add(new CIFLight
                                         {
