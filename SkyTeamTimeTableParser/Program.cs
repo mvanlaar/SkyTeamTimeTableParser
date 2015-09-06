@@ -116,6 +116,9 @@ namespace SkyTeamTimeTableParser
                 string validfrom = matches[0].Value;
                 string validto = matches[1].Value;
 
+                string TEMP_PageFromIATA = null;
+                string TEMP_PageToIATA = null;
+
                 DateTime ValidFrom = DateTime.ParseExact(validfrom, "dd MMM yyyy", ci);
                 DateTime ValidTo = DateTime.ParseExact(validto, "dd MMM yyyy", ci);
                 // Loop through each page of the document
@@ -183,12 +186,14 @@ namespace SkyTeamTimeTableParser
                                         if (String.IsNullOrEmpty(TEMP_FromIATA))
                                         {
                                             TEMP_FromIATA = rgxIATAAirport.Match(temp_string).Groups[0].Value;
+                                            TEMP_PageFromIATA = rgxIATAAirport.Match(temp_string).Groups[0].Value;
                                         }
                                         else
                                         {
                                             if (String.IsNullOrEmpty(TEMP_ToIATA) && !String.IsNullOrEmpty(TEMP_FromIATA))
                                             {
                                                 TEMP_ToIATA = rgxIATAAirport.Match(temp_string).Groups[0].Value;
+                                                TEMP_PageToIATA = rgxIATAAirport.Match(temp_string).Groups[0].Value;
                                             }
                                         }
                                     }
@@ -337,6 +342,10 @@ namespace SkyTeamTimeTableParser
                                             {
                                                 TEMP_FromIATA = Flight.FromIATA;
                                             }
+                                            else
+                                            {
+                                                TEMP_FromIATA = TEMP_PageFromIATA;
+                                            }
                                         }
 
                                         if (TEMP_ToIATA == null)
@@ -346,9 +355,13 @@ namespace SkyTeamTimeTableParser
                                             {
                                                 TEMP_ToIATA = Flight.ToIATA;
                                             }
+                                            else
+                                            {
+                                                TEMP_ToIATA = TEMP_PageToIATA;
+                                            }
                                         }
 
-                                        // If there is still no from and to information we have to parse it from the previous page. Or pages before this?
+                                        // If there is still no from and to information we have to parse it from the previous page or pages before it because it can stand 3 pages back?
 
                                         CIFLights.Add(new CIFLight
                                         {
