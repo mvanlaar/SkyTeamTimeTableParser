@@ -21,7 +21,8 @@ namespace SkyTeamTimeTableParser
 {
     class Program
     {
-        public static readonly List<string> _SkyTeamAircraftCode = new List<string>() { "100","313","319","321","330","333","343","346","388","733","735","310","318","320","32S","332","340","345","380","717","734","736","737", "739", "73G", "73J", "73W", "747", "74M", "753", "75W", "763", "767", "772", "777", "77W", "788", "AB6", "AT5", "ATR", "CR2", "CR9", "CRK", "E70", "E90", "EM2", "EQV", "ER4", "F50", "M11", "M90", "SF3", "738", "73C", "73H", "73R", "744", "74E", "752", "757", "762", "764", "76W", "773", "77L", "787", "A81", "AR8", "AT7", "BUS", "CR7", "CRJ", "DH4", "E75", "E95", "EMJ", "ER3", "ERJ", "F70", "M88", "S20", "SU9" };
+        public static readonly List<string> _SkyTeamAircraftCode = new List<string>() { "100", "313", "319", "321", "330", "333", "343", "346", "388", "733", "735", "310", "318", "320", "32S", "332", "340", "345", "380", "717", "734", "736", "737", "739", "73G", "73J", "73W", "747", "74M", "753", "75W", "763", "767", "772", "777", "77W", "788", "AB6", "AT5", "ATR", "CR2", "CR9", "CRK", "E70", "E90", "EM2", "EQV", "ER4", "F50", "M11", "M90", "SF3", "738", "73C", "73H", "73R", "744", "74E", "752", "757", "762", "764", "76W", "773", "77L", "787", "A81", "AR8", "AT7", "BUS", "CR7", "CRJ", "DH4", "E75", "E95", "EMJ", "ER3", "ERJ", "F70", "M88", "S20", "SU9" };
+        public static readonly List<string> _ColombiaAirports = new List<string>() { "APO", "AUC", "AXM", "BSC", "EJA", "BAQ", "BOG", "BGA", "BUN", "CLO", "CTG", "CRC", "CZU", "CUC", "EYP", "FLA", "GIR", "GPI", "IBE", "LET", "MZL", "MQU", "EOH", "MDE", "MVP", "MTR", "NVA", "PSO", "PEI", "PPN", "PVA", "PUU", "PCR", "UIB", "RCH", "ADZ", "SJE", "SVI", "SMR", "RVE", "TME", "TLU", "TCO", "VUP", "VVC", "ACD", "AFI", "ACR", "ARQ", "NBB", "CPB", "CCO", "CUO", "CAQ", "CPL", "IGO", "CIM", "COG", "RAV", "BHF", "EBG", "ELB", "ECR", "LGT", "HTZ", "IPI", "JUO", "LMC", "LPD", "LPE", "MGN", "MCJ", "MFS", "MMP", "MTB", "NCI", "NQU", "OCV", "ORC", "RON", "PZA", "PTX", "PLT", "PBE", "PDA", "LQM", "NAR", "OTU", "SNT", "AYG", "SSL", "SOX", "TTM", "TCD", "TIB", "TBD", "TDA", "TRB", "URI", "URR", "VGZ", "LCR", "SQE", "SRS", "ULQ", "CVE", "PAL", "PYA", "TQS", "API"};
 
         public class IATAAirport
         {
@@ -42,7 +43,7 @@ namespace SkyTeamTimeTableParser
             public string DisplayName { get; set; }
             public string WebsiteUrl { get; set; }
         }
-        static List<AirlinesDef> _Airlines = new List<AirlinesDef>
+        public static List<AirlinesDef> _Airlines = new List<AirlinesDef>
         {
             new AirlinesDef { IATA = "DA", Name="AEROLINEA DE ANTIOQUIA S.A.", DisplayName="ADA",WebsiteUrl="https://www.ada-aero.com/" },
             new AirlinesDef { IATA = "EF", Name="EASYFLY S.A", DisplayName="Easyfly",WebsiteUrl="http://www.easyfly.com.co" },
@@ -433,79 +434,109 @@ namespace SkyTeamTimeTableParser
 
                                         // If there is still no from and to information we have to parse it from the previous page or pages before it because it can stand 3 pages back?
 
-                                        CIFLights.Add(new CIFLight
+                                        // Adding only flights to or from or in Colombia
+                                        if (_ColombiaAirports.Contains(TEMP_FromIATA, StringComparer.OrdinalIgnoreCase) & !_ColombiaAirports.Contains(TEMP_ToIATA, StringComparer.OrdinalIgnoreCase) || (_ColombiaAirports.Contains(TEMP_ToIATA, StringComparer.OrdinalIgnoreCase) & !_ColombiaAirports.Contains(TEMP_FromIATA, StringComparer.OrdinalIgnoreCase)) || (_ColombiaAirports.Contains(TEMP_ToIATA, StringComparer.OrdinalIgnoreCase) & _ColombiaAirports.Contains(TEMP_FromIATA, StringComparer.OrdinalIgnoreCase)))
                                         {
-                                            FromIATA = TEMP_FromIATA,
-                                            ToIATA = TEMP_ToIATA,
-                                            FromDate = TEMP_ValidFrom,
-                                            ToDate = TEMP_ValidTo,
-                                            ArrivalTime = TEMP_ArrivalTime,
-                                            DepartTime = TEMP_DepartTime,
-                                            FlightAircraft = TEMP_Aircraftcode,
-                                            FlightAirline = TEMP_Airline,
-                                            FlightMonday = TEMP_FlightMonday,
-                                            FlightTuesday = TEMP_FlightTuesday,
-                                            FlightWednesday = TEMP_FlightWednesday,
-                                            FlightThursday = TEMP_FlightThursday,
-                                            FlightFriday = TEMP_FlightFriday,
-                                            FlightSaterday = TEMP_FlightSaterday,
-                                            FlightSunday = TEMP_FlightSunday,
-                                            FlightNumber = TEMP_FlightNumber,
-                                            FlightOperator = null,
-                                            FlightDuration = TEMP_DurationTime.ToString(),
-                                            FlightCodeShare = TEMP_FlightCodeShare,
-                                            FlightNextDayArrival = TEMP_FlightNextDayArrival,
-                                            FlightNextDays = TEMP_FlightNextDays
-                                        });
-                                        // Cleaning All but From and To 
-                                        TEMP_ValidFrom = new DateTime();
-                                        TEMP_ValidTo = new DateTime();
-                                        TEMP_Conversie = 0;
-                                        TEMP_FlightMonday = false;
-                                        TEMP_FlightTuesday = false;
-                                        TEMP_FlightWednesday = false;
-                                        TEMP_FlightThursday = false;
-                                        TEMP_FlightFriday = false;
-                                        TEMP_FlightSaterday = false;
-                                        TEMP_FlightSunday = false;
-                                        TEMP_DepartTime = new DateTime();
-                                        TEMP_ArrivalTime = new DateTime();
-                                        TEMP_FlightNumber = null;
-                                        TEMP_Aircraftcode = null;
-                                        TEMP_DurationTime = TimeSpan.MinValue;
-                                        TEMP_FlightCodeShare = false;
-                                        TEMP_FlightNextDayArrival = false;
-                                        TEMP_FlightNextDays = 0;
+                                            bool alreadyExists = CIFLights.Exists(x => x.FromIATA == TEMP_FromIATA
+                                            && x.ToIATA == TEMP_ToIATA
+                                            && x.FromDate == TEMP_ValidFrom
+                                            && x.ToDate == TEMP_ValidTo
+                                            && x.FlightNumber == TEMP_FlightNumber
+                                            && x.FlightAirline == TEMP_Airline
+                                            && x.FlightMonday == TEMP_FlightMonday
+                                            && x.FlightTuesday == TEMP_FlightTuesday
+                                            && x.FlightWednesday == TEMP_FlightWednesday
+                                            && x.FlightThursday == TEMP_FlightThursday
+                                            && x.FlightFriday == TEMP_FlightFriday
+                                            && x.FlightSaterday == TEMP_FlightSaterday
+                                            && x.FlightSunday == TEMP_FlightSunday);
+
+                                            if (alreadyExists)
+                                            {
+                                                Console.WriteLine("Flight Already found...");
+                                            }
+                                            else
+                                            {
+                                                CIFLights.Add(new CIFLight
+                                                {
+                                                    FromIATA = TEMP_FromIATA,
+                                                    ToIATA = TEMP_ToIATA,
+                                                    FromDate = TEMP_ValidFrom,
+                                                    ToDate = TEMP_ValidTo,
+                                                    ArrivalTime = TEMP_ArrivalTime,
+                                                    DepartTime = TEMP_DepartTime,
+                                                    FlightAircraft = TEMP_Aircraftcode,
+                                                    FlightAirline = TEMP_Airline,
+                                                    FlightMonday = TEMP_FlightMonday,
+                                                    FlightTuesday = TEMP_FlightTuesday,
+                                                    FlightWednesday = TEMP_FlightWednesday,
+                                                    FlightThursday = TEMP_FlightThursday,
+                                                    FlightFriday = TEMP_FlightFriday,
+                                                    FlightSaterday = TEMP_FlightSaterday,
+                                                    FlightSunday = TEMP_FlightSunday,
+                                                    FlightNumber = TEMP_FlightNumber,
+                                                    FlightOperator = null,
+                                                    FlightDuration = TEMP_DurationTime.ToString(),
+                                                    FlightCodeShare = TEMP_FlightCodeShare,
+                                                    FlightNextDayArrival = TEMP_FlightNextDayArrival,
+                                                    FlightNextDays = TEMP_FlightNextDays
+                                                });
+                                            }
+                                            // Cleaning All but From and To 
+                                            TEMP_ValidFrom = new DateTime();
+                                            TEMP_ValidTo = new DateTime();
+                                            TEMP_Conversie = 0;
+                                            TEMP_FlightMonday = false;
+                                            TEMP_FlightTuesday = false;
+                                            TEMP_FlightWednesday = false;
+                                            TEMP_FlightThursday = false;
+                                            TEMP_FlightFriday = false;
+                                            TEMP_FlightSaterday = false;
+                                            TEMP_FlightSunday = false;
+                                            TEMP_DepartTime = new DateTime();
+                                            TEMP_ArrivalTime = new DateTime();
+                                            TEMP_FlightNumber = null;
+                                            TEMP_Aircraftcode = null;
+                                            TEMP_DurationTime = TimeSpan.MinValue;
+                                            TEMP_FlightCodeShare = false;
+                                            TEMP_FlightNextDayArrival = false;
+                                            TEMP_FlightNextDays = 0;
+                                        }
+                                        if (temp_string.Contains("Operated by: "))
+                                        {
+                                            // Ok, this has to be added to the last record.
+                                            CIFLights[CIFLights.Count - 1].FlightOperator = temp_string.Replace("Operated by: ", "").Trim();
+                                            CIFLights[CIFLights.Count - 1].FlightCodeShare = true;
+                                        }
+                                        if (temp_string.Equals("Consult your travel agent for details"))
+                                        {
+                                            TEMP_ToIATA = null;
+                                            TEMP_FromIATA = null;
+                                            TEMP_ValidFrom = new DateTime();
+                                            TEMP_ValidTo = new DateTime();
+                                            TEMP_Conversie = 0;
+                                            TEMP_FlightMonday = false;
+                                            TEMP_FlightTuesday = false;
+                                            TEMP_FlightWednesday = false;
+                                            TEMP_FlightThursday = false;
+                                            TEMP_FlightFriday = false;
+                                            TEMP_FlightSaterday = false;
+                                            TEMP_FlightSunday = false;
+                                            TEMP_DepartTime = new DateTime();
+                                            TEMP_ArrivalTime = new DateTime();
+                                            TEMP_FlightNumber = null;
+                                            TEMP_Aircraftcode = null;
+                                            TEMP_DurationTime = TimeSpan.MinValue;
+                                            TEMP_FlightCodeShare = false;
+                                            TEMP_FlightNextDayArrival = false;
+                                            TEMP_FlightNextDays = 0;
+                                        }
                                     }
-                                    if (temp_string.Contains("Operated by: "))
-                                    {
-                                        // Ok, this has to be added to the last record.
-                                        CIFLights[CIFLights.Count - 1].FlightOperator = temp_string.Replace("Operated by: ", "").Trim();
-                                        CIFLights[CIFLights.Count - 1].FlightCodeShare = true;
-                                    }
-                                    if (temp_string.Equals("Consult your travel agent for details"))
-                                    {
-                                        TEMP_ToIATA = null;
-                                        TEMP_FromIATA = null;
-                                        TEMP_ValidFrom = new DateTime();
-                                        TEMP_ValidTo = new DateTime();
-                                        TEMP_Conversie = 0;
-                                        TEMP_FlightMonday = false;
-                                        TEMP_FlightTuesday = false;
-                                        TEMP_FlightWednesday = false;
-                                        TEMP_FlightThursday = false;
-                                        TEMP_FlightFriday = false;
-                                        TEMP_FlightSaterday = false;
-                                        TEMP_FlightSunday = false;
-                                        TEMP_DepartTime = new DateTime();
-                                        TEMP_ArrivalTime = new DateTime();
-                                        TEMP_FlightNumber = null;
-                                        TEMP_Aircraftcode = null;
-                                        TEMP_DurationTime = TimeSpan.MinValue;
-                                        TEMP_FlightCodeShare = false;
-                                        TEMP_FlightNextDayArrival = false;
-                                        TEMP_FlightNextDays = 0;
-                                    }
+
+
+
+                                        
+                                    
                                     //Console.WriteLine(value);
                                 }
                             }
@@ -593,9 +624,7 @@ namespace SkyTeamTimeTableParser
             string IATAAirportsFile = AppDomain.CurrentDomain.BaseDirectory + "IATAAirports.json";
             JArray o1 = JArray.Parse(File.ReadAllText(IATAAirportsFile));
             IList<IATAAirport> TempIATAAirports = o1.ToObject<IList<IATAAirport>>();
-            var IATAAirports = TempIATAAirports as List<IATAAirport>;
-
-
+            var IATAAirports = TempIATAAirports as List<IATAAirport>;            
 
             Console.WriteLine("Creating GTFS Files...");
 
@@ -621,7 +650,8 @@ namespace SkyTeamTimeTableParser
 
                 for (int i = 0; i < airlines.Count; i++) // Loop through List with for)
                 {
-                    var item4 = _Airlines.Find(q => q.Name == airlines[i].FlightAirline);
+                    string temp_airline = airlines[i].FlightAirline;
+                    var item4 = _Airlines.Find(q => q.IATA == airlines[i].FlightAirline);
                     string TEMP_Name = item4.DisplayName;
                     string TEMP_Url = item4.WebsiteUrl;
                     string TEMP_IATA = item4.IATA;
@@ -675,7 +705,7 @@ namespace SkyTeamTimeTableParser
                 for (int i = 0; i < routes.Count; i++) // Loop through List with for)
                 {
 
-                    var item4 = _Airlines.Find(q => q.Name == routes[i].FlightAirline);
+                    var item4 = _Airlines.Find(q => q.IATA == routes[i].FlightAirline);
                     string TEMP_Name = item4.DisplayName;
                     string TEMP_Url = item4.WebsiteUrl;
                     string TEMP_IATA = item4.IATA;
@@ -821,15 +851,15 @@ namespace SkyTeamTimeTableParser
 
                             // Trips
 
-                            var item4 = _Airlines.Find(q => q.Name == CIFLights[i].FlightAirline);
-                            string TEMP_IATA = item4.IATA;
+                            //var item4 = _Airlines.Find(q => q.IATA == CIFLights[i].FlightAirline);
+                            //string TEMP_IATA = item4.IATA;
 
                             var FromAirportInfo = IATAAirports.Find(q => q.stop_id == CIFLights[i].FromIATA);
                             var ToAirportInfo = IATAAirports.Find(q => q.stop_id == CIFLights[i].ToIATA);
 
-                            csvtrips.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + TEMP_IATA);
+                            csvtrips.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightAirline);
                             csvtrips.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
-                            csvtrips.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", ""));
+                            csvtrips.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
                             csvtrips.WriteField(ToAirportInfo.stop_name);
                             csvtrips.WriteField(CIFLights[i].FlightNumber);
                             csvtrips.WriteField("");
@@ -840,7 +870,7 @@ namespace SkyTeamTimeTableParser
                             csvtrips.NextRecord();
 
                             // Depart Record
-                            csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", ""));
+                            csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
                             csvstoptimes.WriteField(String.Format("{0:HH:mm:ss}", CIFLights[i].DepartTime));
                             csvstoptimes.WriteField(String.Format("{0:HH:mm:ss}", CIFLights[i].DepartTime));
                             csvstoptimes.WriteField(CIFLights[i].FromIATA);
@@ -854,7 +884,7 @@ namespace SkyTeamTimeTableParser
                             // Arrival Record
                             if (!CIFLights[i].FlightNextDayArrival)
                             {
-                                csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", ""));
+                                csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
                                 csvstoptimes.WriteField(String.Format("{0:HH:mm:ss}", CIFLights[i].ArrivalTime));
                                 csvstoptimes.WriteField(String.Format("{0:HH:mm:ss}", CIFLights[i].ArrivalTime));
                                 csvstoptimes.WriteField(CIFLights[i].ToIATA);
@@ -874,7 +904,7 @@ namespace SkyTeamTimeTableParser
                                 int minute = CIFLights[i].ArrivalTime.Minute;
                                 string strminute = minute.ToString();
                                 if (strminute.Length == 1) { strminute = "0" + strminute; }
-                                csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", ""));
+                                csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
                                 csvstoptimes.WriteField(hour + ":" + strminute + ":00");
                                 csvstoptimes.WriteField(hour + ":" + strminute + ":00");
                                 csvstoptimes.WriteField(CIFLights[i].ToIATA);
