@@ -62,7 +62,7 @@ namespace SkyTeamTimeTableParser
             Regex rgxIATAAirport = new Regex(@"^[A-Z]{3}$");
             Regex rgxdate1 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)");
             Regex rgxdate2 = new Regex(@"(([0-9])|([0-2][0-9])|([3][0-1])) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ([0-9]{4})");
-            Regex rgxFlightDay = new Regex(@"^\d+$");
+            Regex rgxFlightDay = new Regex(@"^[\d\s]+$");
             Regex rgxFlightDay2 = new Regex(@"\s[1234567](\s|$)");
             Regex rgxFlightTime = new Regex(@"^([0-9]|0[0-9]|1[0-9]|2[0-3])H([0-9]|0[0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])M$");
             List<CIFLight> CIFLights = new List<CIFLight> { };
@@ -346,7 +346,8 @@ namespace SkyTeamTimeTableParser
                                         if (TEMP_Aircraftcode == "BUS") { TEMP_Airline = null; }
                                         else { TEMP_Airline = TEMP_FlightNumber.Substring(0, 2); }
 
-
+                                        // Strip Airline from flightnumer
+                                        
                                         // Bugfixing pages without flight destination or departure info. Check if we have a flightnumber equal to this flight. and use the from and to.
                                         if (TEMP_FromIATA == null)
                                         {
@@ -379,6 +380,8 @@ namespace SkyTeamTimeTableParser
                                         // Adding only flights to or from or in Colombia
                                         if (_ColombiaAirports.Contains(TEMP_FromIATA, StringComparer.OrdinalIgnoreCase) & !_ColombiaAirports.Contains(TEMP_ToIATA, StringComparer.OrdinalIgnoreCase) || (_ColombiaAirports.Contains(TEMP_ToIATA, StringComparer.OrdinalIgnoreCase) & !_ColombiaAirports.Contains(TEMP_FromIATA, StringComparer.OrdinalIgnoreCase)) || (_ColombiaAirports.Contains(TEMP_ToIATA, StringComparer.OrdinalIgnoreCase) & _ColombiaAirports.Contains(TEMP_FromIATA, StringComparer.OrdinalIgnoreCase)))
                                         {
+                                            TEMP_FlightNumber = TEMP_FlightNumber.Substring(2, (TEMP_FlightNumber.Length - 2));
+
                                             bool alreadyExists = CIFLights.Exists(x => x.FromIATA == TEMP_FromIATA
                                             && x.ToIATA == TEMP_ToIATA
                                             && x.FromDate == TEMP_ValidFrom
@@ -740,7 +743,7 @@ namespace SkyTeamTimeTableParser
 
                             // Calender
 
-                            csvcalendar.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
+                            csvcalendar.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightAirline + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
                             csvcalendar.WriteField(Convert.ToInt32(CIFLights[i].FlightMonday));
                             csvcalendar.WriteField(Convert.ToInt32(CIFLights[i].FlightTuesday));
                             csvcalendar.WriteField(Convert.ToInt32(CIFLights[i].FlightWednesday));
@@ -774,10 +777,10 @@ namespace SkyTeamTimeTableParser
 
 
                             csvtrips.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightAirline);
-                            csvtrips.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
-                            csvtrips.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
+                            csvtrips.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightAirline + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
+                            csvtrips.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightAirline + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
                             csvtrips.WriteField(ToAirportName);
-                            csvtrips.WriteField(CIFLights[i].FlightNumber);
+                            csvtrips.WriteField(CIFLights[i].FlightAirline + CIFLights[i].FlightNumber);
                             csvtrips.WriteField("");
                             csvtrips.WriteField("");
                             csvtrips.WriteField("");
@@ -786,7 +789,7 @@ namespace SkyTeamTimeTableParser
                             csvtrips.NextRecord();
 
                             // Depart Record
-                            csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
+                            csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightAirline + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
                             csvstoptimes.WriteField(String.Format("{0:HH:mm:ss}", CIFLights[i].DepartTime));
                             csvstoptimes.WriteField(String.Format("{0:HH:mm:ss}", CIFLights[i].DepartTime));
                             csvstoptimes.WriteField(CIFLights[i].FromIATA);
@@ -800,7 +803,7 @@ namespace SkyTeamTimeTableParser
                             // Arrival Record
                             if (!CIFLights[i].FlightNextDayArrival)
                             {
-                                csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
+                                csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightAirline + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
                                 csvstoptimes.WriteField(String.Format("{0:HH:mm:ss}", CIFLights[i].ArrivalTime));
                                 csvstoptimes.WriteField(String.Format("{0:HH:mm:ss}", CIFLights[i].ArrivalTime));
                                 csvstoptimes.WriteField(CIFLights[i].ToIATA);
@@ -820,7 +823,7 @@ namespace SkyTeamTimeTableParser
                                 int minute = CIFLights[i].ArrivalTime.Minute;
                                 string strminute = minute.ToString();
                                 if (strminute.Length == 1) { strminute = "0" + strminute; }
-                                csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
+                                csvstoptimes.WriteField(CIFLights[i].FromIATA + CIFLights[i].ToIATA + CIFLights[i].FlightAirline + CIFLights[i].FlightNumber.Replace(" ", "") + String.Format("{0:yyyyMMdd}", CIFLights[i].FromDate) + String.Format("{0:yyyyMMdd}", CIFLights[i].ToDate));
                                 csvstoptimes.WriteField(hour + ":" + strminute + ":00");
                                 csvstoptimes.WriteField(hour + ":" + strminute + ":00");
                                 csvstoptimes.WriteField(CIFLights[i].ToIATA);
