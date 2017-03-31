@@ -399,30 +399,34 @@ namespace SkyTeamTimeTableParser
                                             }
                                             else
                                             {
-                                                CIFLights.Add(new CIFLight
+                                                if (TEMP_Airline != "SU")
                                                 {
-                                                    FromIATA = TEMP_FromIATA,
-                                                    ToIATA = TEMP_ToIATA,
-                                                    FromDate = TEMP_ValidFrom,
-                                                    ToDate = TEMP_ValidTo,
-                                                    ArrivalTime = TEMP_ArrivalTime,
-                                                    DepartTime = TEMP_DepartTime,
-                                                    FlightAircraft = TEMP_Aircraftcode,
-                                                    FlightAirline = TEMP_Airline,
-                                                    FlightMonday = TEMP_FlightMonday,
-                                                    FlightTuesday = TEMP_FlightTuesday,
-                                                    FlightWednesday = TEMP_FlightWednesday,
-                                                    FlightThursday = TEMP_FlightThursday,
-                                                    FlightFriday = TEMP_FlightFriday,
-                                                    FlightSaterday = TEMP_FlightSaterday,
-                                                    FlightSunday = TEMP_FlightSunday,
-                                                    FlightNumber = TEMP_FlightNumber,
-                                                    FlightOperator = null,
-                                                    FlightDuration = TEMP_DurationTime.ToString(),
-                                                    FlightCodeShare = TEMP_FlightCodeShare,
-                                                    FlightNextDayArrival = TEMP_FlightNextDayArrival,
-                                                    FlightNextDays = TEMP_FlightNextDays
-                                                });
+                                                    // Bugfix the aeroflot that comes to colombia?
+                                                    CIFLights.Add(new CIFLight
+                                                    {
+                                                        FromIATA = TEMP_FromIATA,
+                                                        ToIATA = TEMP_ToIATA,
+                                                        FromDate = TEMP_ValidFrom,
+                                                        ToDate = TEMP_ValidTo,
+                                                        ArrivalTime = TEMP_ArrivalTime,
+                                                        DepartTime = TEMP_DepartTime,
+                                                        FlightAircraft = TEMP_Aircraftcode,
+                                                        FlightAirline = TEMP_Airline,
+                                                        FlightMonday = TEMP_FlightMonday,
+                                                        FlightTuesday = TEMP_FlightTuesday,
+                                                        FlightWednesday = TEMP_FlightWednesday,
+                                                        FlightThursday = TEMP_FlightThursday,
+                                                        FlightFriday = TEMP_FlightFriday,
+                                                        FlightSaterday = TEMP_FlightSaterday,
+                                                        FlightSunday = TEMP_FlightSunday,
+                                                        FlightNumber = TEMP_FlightNumber,
+                                                        FlightOperator = null,
+                                                        FlightDuration = TEMP_DurationTime.ToString(),
+                                                        FlightCodeShare = TEMP_FlightCodeShare,
+                                                        FlightNextDayArrival = TEMP_FlightNextDayArrival,
+                                                        FlightNextDays = TEMP_FlightNextDays
+                                                    });
+                                                }
                                             }
                                             // Cleaning All but From and To 
                                             TEMP_ValidFrom = new DateTime();
@@ -473,11 +477,7 @@ namespace SkyTeamTimeTableParser
                                             TEMP_FlightNextDayArrival = false;
                                             TEMP_FlightNextDays = 0;
                                         }
-                                    }
-
-
-
-                                        
+                                    }                                        
                                     
                                     //Console.WriteLine(value);
                                 }
